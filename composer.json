@@ -1,0 +1,20 @@
+{
+    "name": "nekopoi/events",
+    "description": "php事件和promise",
+    "type": "library",
+    "license": "mit",
+    "authors": [
+        {
+            "name": "neko",
+            "email": "1330040125@qq.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Neko\\Events\\": "src"
+        }
+    },
+    "require": {
+    }
+}
