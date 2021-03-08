@@ -40,7 +40,18 @@ class Events
                 return false;
             }
         }
-        self::$listens[$event][] = ['callback' => $callback, 'once' => $once];
+        $info = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3);
+        $func = 'no_func';
+        if (isset($info[1])) {
+            $to_info  = $info[1];
+            $function = $to_info['function'];
+            $func     = "{$function}";
+        }
+        $call_line               = $info[0]['line'];
+        self::$listens[$event][] = ['callback' => $callback, 'once' => $once, 'ext_data' => [
+            'function' => $func,
+            'line'     => $call_line
+        ]];
         return true;
     }
 
@@ -90,7 +101,7 @@ class Events
             $listen['once'] && self::remove($event, $index);
 
             // 缓存上一次执行的结果
-            if (array_key_exists('result_cache',$listen) && $is_cache) {
+            if (array_key_exists('result_cache', $listen) && $is_cache) {
                 $return[] = $listen['result_cache'];
             } else {
                 $r = call_user_func_array($callback, $args);
@@ -170,5 +181,23 @@ class Events
             });
             return $promise;
         }
+    }
+
+    /**
+     * 清理事件的缓存结果
+     *
+     * @param      $event
+     * @param null $index
+     *
+     * @return void
+     */
+    public static function clear_cache($event, $index = null)
+    {
+        if (is_null($index))
+            foreach (self::$listens[$event] as $key => $item) {
+                unset(self::$listens[$event][$key]['result_cache']);
+            }
+        else
+            unset(self::$listens[$event][$index]['result_cache']);
     }
 }
