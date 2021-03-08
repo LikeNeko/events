@@ -11,6 +11,7 @@ class Events
     // 是否用return 返回
     public static bool $is_return = true;
 
+
     /**
      * @return array
      */
@@ -73,6 +74,35 @@ class Events
     }
 
     /**
+     * 执行闭包
+     *
+     * @param       $event
+     * @param       $args
+     * @param false $is_cache
+     *
+     * @return array
+     */
+    private static function call($event, $args, $is_cache = false)
+    {
+        $return = [];
+        foreach ((array)self::$listens[$event] as $index => $listen) {
+            $callback = $listen['callback'];
+            $listen['once'] && self::remove($event, $index);
+
+            // 缓存上一次执行的结果
+            if (isset($listen['result_cache']) && $is_cache) {
+                $return[] = $listen['result_cache'];
+            } else {
+                $r = call_user_func_array($callback, $args);
+
+                self::$listens[$event][$index]['result_cache'] = $r;
+                $return[]                                      = $r;
+            }
+        }
+        return $return;
+    }
+
+    /**
      * 触发一个事件
      *
      * @param mixed ...$event_names
@@ -90,28 +120,55 @@ class Events
         if (!isset(self::$listens[$event])) {
             return null;
         }
-        if (self::$is_return){
-            $return = [];
-            foreach ((array)self::$listens[$event] as $index => $listen) {
-                $callback = $listen['callback'];
-                $listen['once'] && self::remove($event, $index);
-                $return[] = call_user_func_array($callback, $args);
-            }
-            return count($return)>1?$return:$return[0];
+        if (self::$is_return) {
+            $return = self::call($event, $args);
+            return count($return) > 1 ? $return : $return[0];
+        } else {
+            $promise = new Promise(function ($resolve, $reject) use ($event, $args) {
+                $return = self::call($event, $args);
+                if (count($return) > 1) {
+                    $resolve($return);
+                } else {
+                    $resolve($return[0]);
+                }
+            });
+            return $promise;
         }
-        $promise = new Promise(function ($resolve, $reject) use ($event, $args) {
-            $return = [];
-            foreach ((array)self::$listens[$event] as $index => $listen) {
-                $callback = $listen['callback'];
-                $listen['once'] && self::remove($event, $index);
-                $return[] = call_user_func_array($callback, $args);
-            }
-            if (count($return) > 1) {
-                $resolve($return);
-            } else {
-                $resolve($return[0]);
-            }
-        });
-        return $promise;
+
+    }
+
+    /**
+     * 触发一个事件
+     *
+     * @param mixed ...$event_names
+     *
+     * @return mixed|Promise
+     */
+    public static function trigger_once(...$event_names)
+    {
+        if (!func_num_args()) {
+            return null;
+        }
+        $args = func_get_args();
+        // 去掉方法名
+        $event = array_shift($args);
+        if (!isset(self::$listens[$event])) {
+            return null;
+        }
+
+        if (self::$is_return) {
+            $return = self::call($event, $args, true);
+            return count($return) > 1 ? $return : $return[0];
+        } else {
+            $promise = new Promise(function ($resolve, $reject) use ($event, $args) {
+                $return = self::call($event, $args, true);
+                if (count($return) > 1) {
+                    $resolve($return);
+                } else {
+                    $resolve($return[0]);
+                }
+            });
+            return $promise;
+        }
     }
 }
