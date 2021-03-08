@@ -8,6 +8,8 @@ class Events
 
     // key是否唯一为true全局key只能存在一个，需要监听多个相同的key则需要先remove
     public static bool $key_once = false;
+    // 是否用return 返回
+    public static bool $is_return = true;
 
     /**
      * @return array
@@ -32,8 +34,8 @@ class Events
             return false;
         };
         // 如果key已经设置过了则反false
-        if (self::$key_once){
-            if(isset(self::$listens[$event])){
+        if (self::$key_once) {
+            if (isset(self::$listens[$event])) {
                 return false;
             }
         }
@@ -73,7 +75,7 @@ class Events
     /**
      * 触发一个事件
      *
-     * @param  mixed ...$event_names
+     * @param mixed ...$event_names
      *
      * @return mixed|Promise
      */
@@ -82,11 +84,20 @@ class Events
         if (!func_num_args()) {
             return null;
         }
-        $args  = func_get_args();
+        $args = func_get_args();
         // 去掉方法名
         $event = array_shift($args);
         if (!isset(self::$listens[$event])) {
             return null;
+        }
+        if (self::$is_return){
+            $return = [];
+            foreach ((array)self::$listens[$event] as $index => $listen) {
+                $callback = $listen['callback'];
+                $listen['once'] && self::remove($event, $index);
+                $return[] = call_user_func_array($callback, $args);
+            }
+            return count($return)>1?$return:$return[0];
         }
         $promise = new Promise(function ($resolve, $reject) use ($event, $args) {
             $return = [];
@@ -95,9 +106,9 @@ class Events
                 $listen['once'] && self::remove($event, $index);
                 $return[] = call_user_func_array($callback, $args);
             }
-            if (count($return)>1){
+            if (count($return) > 1) {
                 $resolve($return);
-            }else{
+            } else {
                 $resolve($return[0]);
             }
         });
