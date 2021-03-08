@@ -90,7 +90,7 @@ class Events
             $listen['once'] && self::remove($event, $index);
 
             // 缓存上一次执行的结果
-            if (isset($listen['result_cache']) && $is_cache) {
+            if (array_key_exists('result_cache',$listen) && $is_cache) {
                 $return[] = $listen['result_cache'];
             } else {
                 $r = call_user_func_array($callback, $args);
