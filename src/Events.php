@@ -15,7 +15,7 @@ class Events
     /**
      * @return array
      */
-    public static function getListens(): array
+    public static function getListens()
     {
         return self::$listens;
     }
@@ -29,7 +29,7 @@ class Events
      *
      * @return bool
      */
-    public static function listen($event, $callback, $once = false): bool
+    public static function listen($event, $callback, $once = false)
     {
         if (!is_callable($callback)) {
             return false;
@@ -63,7 +63,7 @@ class Events
      *
      * @return bool
      */
-    public static function one($event, $callback): bool
+    public static function one($event, $callback)
     {
         return self::listen($event, $callback, true);
     }
