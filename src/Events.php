@@ -4,12 +4,12 @@ namespace Neko\Events;
 class Events
 {
     // 事件列表
-    protected static array $listens = [];
+    protected static  $listens = [];
 
     // key是否唯一为true全局key只能存在一个，需要监听多个相同的key则需要先remove
-    public static bool $key_once = false;
+    public static  $key_once = false;
     // 是否用return 返回
-    public static bool $is_return = true;
+    public static  $is_return = true;
 
 
     /**
